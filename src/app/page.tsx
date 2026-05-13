@@ -135,7 +135,7 @@ export default function Home() {
               Lo Básico Express
             </div>
             <div className="text-sm text-gray-500 dark:text-zinc-500">
-              © 2024 Lo Básico Express. Todos los derechos reservados.
+              © 2026 Lo Básico Express. Todos los derechos reservados.
             </div>
           </div>
         </div>
