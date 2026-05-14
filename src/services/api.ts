@@ -22,6 +22,12 @@ export const fetchProducts = async (categoryId?: number, search?: string): Promi
   if (categoryId) params.append('category_id', categoryId.toString());
   if (search) params.append('search', search);
   
+  // Intentar obtener token del localStorage si existe
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('token');
+    if (token) params.append('token', token);
+  }
+  
   if (params.toString()) url += `?${params.toString()}`;
   
   const response = await fetch(url, { cache: 'no-store' });
