@@ -11,6 +11,7 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [initialIsLogin, setInitialIsLogin] = useState(false);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -31,6 +32,16 @@ export default function Home() {
     loadInitialData();
   }, []);
 
+  const handleOpenLogin = () => {
+    setInitialIsLogin(true);
+    setIsCheckoutOpen(true);
+  };
+
+  const handleOpenCheckout = () => {
+    setInitialIsLogin(false);
+    setIsCheckoutOpen(true);
+  };
+
   const handleCategorySelect = async (categoryId: number | null) => {
     setLoading(true);
     setSelectedCategory(categoryId);
@@ -46,8 +57,11 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-white dark:bg-zinc-950">
-      <Navbar onOpenCheckout={() => setIsCheckoutOpen(true)} />
-      
+      <Navbar 
+        onOpenCheckout={handleOpenCheckout} 
+        onOpenLogin={handleOpenLogin}
+      />
+
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 overflow-hidden">
@@ -63,7 +77,7 @@ export default function Home() {
             <p className="text-lg md:text-xl text-gray-600 dark:text-zinc-400 mb-10 leading-relaxed">
               Tus productos esenciales del día a día, validados automáticamente y entregados en minutos. Sin complicaciones, sin esperas.
             </p>
-            
+
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <a href="#productos" className="w-full sm:w-auto px-8 py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-2xl shadow-xl shadow-emerald-600/25 transition-all active:scale-95">
                 Comprar Ahora
@@ -84,16 +98,16 @@ export default function Home() {
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">Nuestro Catálogo</h2>
               <p className="text-gray-600 dark:text-zinc-400">Selecciona una categoría para filtrar tus productos.</p>
             </div>
-            
+
             <div className="flex flex-wrap gap-2">
-              <button 
+              <button
                 onClick={() => handleCategorySelect(null)}
                 className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === null ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-800'}`}
               >
                 Todos
               </button>
               {categories.map((cat) => (
-                <button 
+                <button
                   key={cat.id}
                   onClick={() => handleCategorySelect(cat.id)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === cat.id ? 'bg-emerald-600 text-white' : 'bg-gray-100 dark:bg-zinc-900 text-gray-600 dark:text-zinc-400 hover:bg-gray-200 dark:hover:bg-zinc-800'}`}
@@ -103,7 +117,7 @@ export default function Home() {
               ))}
             </div>
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center py-20">
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-600"></div>
@@ -121,10 +135,11 @@ export default function Home() {
           )}
         </div>
       </section>
-      
-      <CheckoutModal 
-        isOpen={isCheckoutOpen} 
-        onClose={() => setIsCheckoutOpen(false)} 
+
+      <CheckoutModal
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        initialIsLogin={initialIsLogin}
       />
 
       {/* Footer */}
