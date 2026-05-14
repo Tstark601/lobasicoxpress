@@ -4,10 +4,20 @@ import { useCart } from '@/context/CartContext';
 
 interface NavbarProps {
   onOpenCheckout: () => void;
+  onOpenLogin: () => void;
 }
 
-const Navbar = ({ onOpenCheckout }: NavbarProps) => {
+const Navbar = ({ onOpenCheckout, onOpenLogin }: NavbarProps) => {
   const { totalItems } = useCart();
+  const [userName, setUserName] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    // Verificar si hay sesión
+    const storedName = localStorage.getItem('customer_name');
+    if (storedName) {
+      setUserName(storedName);
+    }
+  }, []);
   return (
     <nav className="sticky top-0 z-[100] bg-white/80 backdrop-blur-md border-b border-gray-100 dark:bg-zinc-900/80 dark:border-zinc-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -27,7 +37,26 @@ const Navbar = ({ onOpenCheckout }: NavbarProps) => {
             <Link href="#como-funciona" className="hover:text-emerald-600 transition-colors">¿Cómo funciona?</Link>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {userName ? (
+              <button 
+                onClick={onOpenCheckout}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/10 rounded-xl hover:bg-emerald-100 transition-all"
+              >
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                Hola, {userName.split(' ')[0]}
+              </button>
+            ) : (
+              <button 
+                onClick={onOpenLogin}
+                className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-zinc-400 hover:text-emerald-600 transition-colors"
+              >
+                Iniciar Sesión
+              </button>
+            )}
+
+            <div className="w-px h-6 bg-gray-200 dark:bg-zinc-800 mx-1" />
+
             <button 
               onClick={onOpenCheckout}
               className="relative p-2 text-gray-600 dark:text-zinc-400 hover:text-emerald-600 transition-colors"

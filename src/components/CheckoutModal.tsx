@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import Link from 'next/link';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
@@ -17,9 +17,10 @@ const center = {
 interface CheckoutModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialIsLogin?: boolean;
 }
 
-const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
+const CheckoutModal = ({ isOpen, onClose, initialIsLogin = false }: CheckoutModalProps) => {
   const { cart, totalPrice, clearCart, removeFromCart } = useCart();
   const [location, setLocation] = useState(center);
   const [reference, setReference] = useState('');
@@ -29,7 +30,41 @@ const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isLogin, setIsLogin] = useState(false); // Toggle para login
+  const [isLogin, setIsLogin] = useState(initialIsLogin); // Toggle para login
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  // Sincronizar isLogin cuando el modal se abre desde props
+  useEffect(() => {
+    if (isOpen) {
+        setIsLogin(initialIsLogin);
+    }
+  }, [isOpen, initialIsLogin]);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+
+  // Cargar datos si ya está logueado
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        setIsLoggedIn(true);
+        setName(localStorage.getItem('customer_name') || '');
+        setCustomerId(localStorage.getItem('customer_id') || '');
+        setEmail(localStorage.getItem('customer_email') || '');
+        setPhone(localStorage.getItem('customer_phone') || '');
+        setAddress(localStorage.getItem('customer_address') || '');
+    }
+  }, [isOpen]);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    setIsLoggedIn(false);
+    setName('');
+    setCustomerId('');
+    setEmail('');
+    setPhone('');
+    setAddress('');
+    window.location.reload();
+  };
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -44,6 +79,49 @@ const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
       });
     }
   }, []);
+
+  const handleLogin = async () => {
+    if (!loginEmail || !loginPassword) {
+      alert("Por favor ingresa email y contraseña");
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch('https://tienda-abarrotes.onrender.com/api/v1/mobile/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword })
+      });
+
+      if (!response.ok) throw new Error('Credenciales incorrectas');
+      
+      const result = await response.json();
+      
+      // Guardar sesión
+      localStorage.setItem('token', result.access_token);
+      localStorage.setItem('customer_name', result.user_name);
+      localStorage.setItem('customer_id', result.user_id.toString());
+      localStorage.setItem('customer_email', result.email);
+      localStorage.setItem('customer_phone', result.phone || '');
+      localStorage.setItem('customer_address', result.address || '');
+
+      // Cargar datos en el formulario actual
+      setName(result.user_name);
+      setEmail(result.email);
+      setPhone(result.phone || '');
+      setAddress(result.address || '');
+      
+      alert("¡Bienvenido! Los precios se actualizarán para tu perfil.");
+      
+      // Recargar para que el catálogo use el nuevo token
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      alert("Error al iniciar sesión. Verifica tus datos.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOrder = async () => {
     if (!reference || !phone || !name || !customerId || !address) {
@@ -67,7 +145,7 @@ const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
         }))
       };
 
-      const response = await fetch('http://localhost:5000/api/public/orders/', {
+      const response = await fetch('https://tienda-abarrotes.onrender.com/api/public/orders/', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(orderData)
@@ -182,12 +260,22 @@ const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
           <div className="mb-6 p-5 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-3xl border border-emerald-100 dark:border-emerald-900/30">
             <div className="flex items-center justify-between mb-3">
                 <h3 className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">Datos para Facturación</h3>
-                <button 
-                    onClick={() => setIsLogin(!isLogin)}
-                    className="text-xs font-bold text-emerald-600 hover:underline"
-                >
-                    {isLogin ? "← Volver a invitado" : "¿Ya tienes cuenta? Login"}
-                </button>
+                {!isLoggedIn && (
+                    <button 
+                        onClick={() => setIsLogin(!isLogin)}
+                        className="text-xs font-bold text-emerald-600 hover:underline"
+                    >
+                        {isLogin ? "← Volver a invitado" : "¿Ya tienes cuenta? Login"}
+                    </button>
+                )}
+                {isLoggedIn && (
+                    <button 
+                        onClick={handleLogout}
+                        className="text-xs font-bold text-red-500 hover:underline"
+                    >
+                        Cerrar Sesión
+                    </button>
+                )}
             </div>
 
             {isLogin ? (
@@ -195,15 +283,25 @@ const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                     <p className="text-xs text-gray-500 mb-4">Ingresa con tus credenciales de la App para cargar tus datos automáticamente.</p>
                     <input 
                         type="text" 
-                        placeholder="Email o Teléfono"
+                        placeholder="Email"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
                         className="w-full bg-white dark:bg-zinc-800 border-none rounded-xl p-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                     />
                     <input 
                         type="password" 
                         placeholder="Contraseña"
+                        value={loginPassword}
+                        onChange={(e) => setLoginPassword(e.target.value)}
                         className="w-full bg-white dark:bg-zinc-800 border-none rounded-xl p-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                     />
-                    <button className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm">Entrar</button>
+                    <button 
+                        onClick={handleLogin}
+                        disabled={loading}
+                        className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm disabled:bg-gray-400"
+                    >
+                        {loading ? "Entrando..." : "Entrar"}
+                    </button>
                     <div className="text-center">
                         <Link href="/forgot-password" className="text-[10px] text-emerald-600 hover:underline">
                             ¿Olvidaste tu contraseña?
