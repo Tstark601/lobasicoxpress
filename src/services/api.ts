@@ -24,7 +24,7 @@ export const fetchProducts = async (categoryId?: number, search?: string): Promi
   
   if (params.toString()) url += `?${params.toString()}`;
   
-  const response = await fetch(url);
+  const response = await fetch(url, { cache: 'no-store' });
   if (!response.ok) throw new Error('Failed to fetch products');
   return response.json();
 };
