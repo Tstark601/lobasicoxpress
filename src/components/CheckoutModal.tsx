@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useCallback } from 'react';
 import { useCart } from '@/context/CartContext';
+import Link from 'next/link';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 
 const containerStyle = {
@@ -203,6 +204,11 @@ const CheckoutModal = ({ isOpen, onClose }: CheckoutModalProps) => {
                         className="w-full bg-white dark:bg-zinc-800 border-none rounded-xl p-3 text-gray-900 dark:text-white focus:ring-2 focus:ring-emerald-500"
                     />
                     <button className="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold text-sm">Entrar</button>
+                    <div className="text-center">
+                        <Link href="/forgot-password" className="text-[10px] text-emerald-600 hover:underline">
+                            ¿Olvidaste tu contraseña?
+                        </Link>
+                    </div>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
